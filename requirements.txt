@@ -1,0 +1,12 @@
+streamlit
+moviepy
+numpy
+Pillow
+requests
+pydub
+python-docx
+elevenlabs
+imageio
+imageio-ffmpeg
+decorator
+tqdm
