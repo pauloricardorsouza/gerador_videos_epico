@@ -10,15 +10,13 @@ import numpy as np
 import docx
 
 # ============================
-# CONFIGURAÇÕES INICIAIS
+# CONFIGURAÇÕES DE API
 # ============================
-st.title("🎬 Gerador de Vídeos Épicos com IA (Web)")
-
-OPENAI_API_KEY = st.text_input("Digite sua OpenAI API Key:", type="password")
-ELEVEN_API_KEY = st.text_input("Digite sua ElevenLabs API Key:", type="password")
+OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY")
+ELEVEN_API_KEY = st.secrets.get("ELEVEN_API_KEY")
 
 if not OPENAI_API_KEY or not ELEVEN_API_KEY:
-    st.warning("Por favor, insira ambas as API Keys.")
+    st.warning("Por favor, configure suas API Keys nos Secrets do Streamlit Cloud.")
     st.stop()
 
 set_api_key(ELEVEN_API_KEY)
@@ -73,7 +71,8 @@ def criar_video_cena(cena_texto, duracao=30, voz="Antoni", cena_num=1):
     # Vídeo
     img_clip = ImageClip(img_path).set_duration(duracao).resize(height=720).set_position("center")
     img_clip = img_clip.fx(vfx.zoom_in, final_scale=1.05)
-    legenda_clip = TextClip(txt=cena_texto, fontsize=40, color="white", font="Georgia-Bold", size=(720, None), method="caption", align="center").set_duration(duracao)
+    legenda_clip = TextClip(txt=cena_texto, fontsize=40, color="white", font="Georgia-Bold",
+                            size=(720, None), method="caption", align="center").set_duration(duracao)
     video = CompositeVideoClip([img_clip, legenda_clip]).set_audio(AudioFileClip(audio_path))
 
     out_path = os.path.join(PASTA_VIDEOS, f"video_{cena_num}.mp4")
@@ -83,6 +82,8 @@ def criar_video_cena(cena_texto, duracao=30, voz="Antoni", cena_num=1):
 # ============================
 # INTERFACE WEB
 # ============================
+st.title("🎬 Gerador de Vídeos Épicos Web")
+
 arquivo = st.file_uploader("Faça upload do roteiro (.txt ou .docx):", type=["txt", "docx"])
 duracao = st.slider("Duração aproximada do vídeo (segundos):", min_value=10, max_value=120, value=30)
 voz = st.selectbox("Escolha a voz para narração:", ["Antoni", "Bella", "Elli", "Josh"])
@@ -104,4 +105,6 @@ if st.button("Gerar Vídeos") and arquivo:
     for i, cena_texto in enumerate(cenas, 1):
         video_path = criar_video_cena(cena_texto, duracao, voz, i)
         st.video(video_path)
-        st.success(f"Vídeo {i} pronto: {video_path}")
+        with open(video_path, "rb") as f:
+            st.download_button(f"Download Vídeo {i}", f, file_name=f"video_{i}.mp4")
+        st.success(f"Vídeo {i} pronto!")
