@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Vídeos Épicos com IA</title>
+<style>
+body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
+h1 { text-align: center; }
+input, select, button, textarea { margin: 5px 0; padding: 8px; width: 100%; max-width: 600px; display: block; }
+video, img { display: block; margin: 20px auto; max-width: 720px; border: 2px solid #fff; }
+</style>
+</head>
+<body>
+
+<h1>🎬 Gerador de Vídeos Épicos com IA</h1>
+<input type="password" id="openaiKey" placeholder="Digite sua OpenAI API Key">
+<input type="password" id="elevenKey" placeholder="Digite sua ElevenLabs API Key">
+<input type="file" id="fileInput" accept=".txt">
+<input type="number" id="duration" placeholder="Duração em segundos" value="30" min="10" max="120">
+<select id="voice">
+  <option value="Antoni">Antoni</option>
+  <option value="Bella">Bella</option>
+  <option value="Elli">Elli</option>
+  <option value="Josh">Josh</option>
+</select>
+<button id="generateBtn">Gerar Vídeo</button>
+
+<div id="output"></div>
+
+<h2>Exemplo de Roteiro</h2>
+<textarea id="sceneExample" readonly rows="10">
+Cena 1: Um herói desperta em uma floresta sombria, cercado por árvores retorcidas e névoa espessa.
+
+Cena 2: Ele encontra um antigo artefato mágico que brilha com luz dourada, revelando símbolos misteriosos.
+
+Cena 3: Uma criatura sombria aparece entre as sombras, observando cada movimento do herói.
+
+Cena 4: O herói atravessa um rio turbulento, enfrentando desafios naturais enquanto a música épica toca.
+
+Cena 5: Em um penhasco, ele contempla o horizonte, pronto para a grande batalha que se aproxima.
+</textarea>
+
+<script>
+async function gerarImagem(prompt, openaiKey) {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+        body: JSON.stringify({ model: 'gpt-image-1', prompt, size: '1024x1024' })
+    });
+    const data = await response.json();
+    return data.data[0].url;
+}
+
+async function gerarAudio(texto, voice, elevenKey) {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
+        method: 'POST',
+        headers: { 'xi-api-key': elevenKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: texto, model: 'eleven_multilingual_v2' })
+    });
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+}
+
+document.getElementById('generateBtn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('fileInput');
+    const openaiKey = document.getElementById('openaiKey').value;
+    const elevenKey = document.getElementById('elevenKey').value;
+    const duration = parseInt(document.getElementById('duration').value);
+    const voice = document.getElementById('voice').value;
+
+    if (!fileInput.files[0] || !openaiKey || !elevenKey) { alert('Preencha todos os campos e faça upload do arquivo.'); return; }
+
+    const text = await fileInput.files[0].text();
+    const scenes = text.split('\n\n').map(s => s.trim()).filter(s => s);
+
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = '';
+
+    for (let i = 0; i < scenes.length; i++) {
+        const sceneText = scenes[i];
+        const imgUrl = await gerarImagem(sceneText, openaiKey);
+        const audioUrl = await gerarAudio(sceneText, voice, elevenKey);
+
+        const videoContainer = document.createElement('div');
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.style.width = '720px';
+
+        const audio = document.createElement('audio');
+        audio.src = audioUrl;
+        audio.controls = true;
+        audio.autoplay = true;
+
+        videoContainer.appendChild(img);
+        videoContainer.appendChild(audio);
+        outputDiv.appendChild(videoContainer);
+    }
+});
+</script>
+
+</body>
+</html>
